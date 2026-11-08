@@ -5,17 +5,38 @@ const User = require('../models/User');
 // @access  Public
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, phone, role } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ success: false, error: 'Please provide full name, email and password' });
+    }
+
+    const cleanEmail = email.toLowerCase().trim();
+    const existingUser = await User.findOne({ email: cleanEmail });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        error: 'An account with this email address already exists. Please log in.'
+      });
+    }
+
     const user = await User.create({
-      name,
-      email,
+      name: name.trim(),
+      email: cleanEmail,
+      phone: phone ? phone.trim() : undefined,
       passwordHash: password, // will be hashed by pre-save hook
-      role
+      role: role || 'tourist'
     });
     
     const token = user.getSignedJwtToken();
     res.status(201).json({ success: true, token });
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        error: 'An account with this email address already exists. Please log in.'
+      });
+    }
     res.status(400).json({ success: false, error: error.message });
   }
 };
@@ -31,14 +52,15 @@ exports.login = async (req, res) => {
       return res.status(400).json({ success: false, error: 'Please provide an email and password' });
     }
     
-    const user = await User.findOne({ email });
+    const cleanEmail = email.toLowerCase().trim();
+    const user = await User.findOne({ email: cleanEmail });
     if (!user) {
-      return res.status(401).json({ success: false, error: 'Invalid credentials' });
+      return res.status(401).json({ success: false, error: 'Invalid email or password' });
     }
     
     const isMatch = await user.matchPassword(password);
     if (!isMatch) {
-      return res.status(401).json({ success: false, error: 'Invalid credentials' });
+      return res.status(401).json({ success: false, error: 'Invalid email or password' });
     }
     
     const token = user.getSignedJwtToken();
@@ -54,6 +76,9 @@ exports.login = async (req, res) => {
 exports.getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
     res.status(200).json({
       success: true,
       data: {
@@ -61,6 +86,7 @@ exports.getMe = async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
+        phone: user.phone || '',
         role: user.role,
         profileImage: user.profileImage
       }
