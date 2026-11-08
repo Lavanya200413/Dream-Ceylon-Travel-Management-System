@@ -74,7 +74,10 @@ const DestinationDetails = () => {
   }
 
   const imageUrl = destination.image || destination.imageUrl;
-  const categoryColor = CATEGORY_COLORS[destination.category] || 'bg-blue-900 text-white';
+  const primaryCategory = Array.isArray(destination.category)
+    ? destination.category[0]
+    : destination.category;
+  const categoryColor = CATEGORY_COLORS[primaryCategory] || 'bg-blue-900 text-white';
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 space-y-8 animate-fadeIn">
@@ -116,7 +119,7 @@ const DestinationDetails = () => {
           <div className="relative z-10 p-8 md:p-12 text-white max-w-4xl space-y-2">
             <div className="flex flex-wrap items-center gap-2 mb-1">
               <span className={`text-xs font-bold uppercase tracking-wider px-3.5 py-1 rounded-full shadow-md border border-white/20 ${categoryColor}`}>
-                {destination.category} Destination
+                {primaryCategory} Destination
               </span>
               {destination.province && (
                 <span className="bg-white/20 backdrop-blur-md text-white text-xs font-semibold px-3 py-1 rounded-full border border-white/30">
@@ -154,7 +157,7 @@ const DestinationDetails = () => {
                 <MapPin size={14} className="mr-1.5 text-blue-600" /> {destination.district} District
               </span>
               <span className="flex items-center text-xs font-bold text-emerald-800 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200">
-                <Compass size={14} className="mr-1.5 text-emerald-600" /> {destination.category}
+                <Compass size={14} className="mr-1.5 text-emerald-600" /> {primaryCategory}
               </span>
               <span className="flex items-center text-xs font-medium text-gray-600 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-200">
                 <Eye size={14} className="mr-1.5 text-gray-500" /> {destination.viewCount || 1} Views
@@ -233,7 +236,7 @@ const DestinationDetails = () => {
 
               <div className="flex justify-between items-start gap-2 py-1 border-b border-gray-100">
                 <span className="font-semibold text-gray-500">Category:</span>
-                <span className="font-bold text-blue-900 text-right">{destination.category}</span>
+                <span className="font-bold text-blue-900 text-right">{primaryCategory}</span>
               </div>
 
               <div className="flex justify-between items-start gap-2 py-1 border-b border-gray-100">

@@ -22,7 +22,7 @@ export const PackageProvider = ({ children }) => {
   });
 
   const [currency, setCurrencyState] = useState(() => {
-    return localStorage.getItem('preferredCurrency') || 'USD';
+    return localStorage.getItem('preferredCurrency') || 'LKR';
   });
 
   const [currencyRates, setCurrencyRates] = useState(DEFAULT_CURRENCY_RATES);

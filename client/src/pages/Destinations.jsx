@@ -102,25 +102,33 @@ const Destinations = () => {
     return destinations.filter(dest => {
       // 1. Search Query
       const q = searchQuery.toLowerCase().trim();
+      const catStr = Array.isArray(dest.category)
+        ? dest.category.join(' ')
+        : (dest.category || '');
       const matchesSearch = !q || (
         dest.name?.toLowerCase().includes(q) ||
         dest.district?.toLowerCase().includes(q) ||
         dest.province?.toLowerCase().includes(q) ||
         dest.location?.toLowerCase().includes(q) ||
-        dest.category?.toLowerCase().includes(q) ||
+        catStr.toLowerCase().includes(q) ||
         dest.description?.toLowerCase().includes(q) ||
         (Array.isArray(dest.tags) && dest.tags.some(t => t.toLowerCase().includes(q)))
       );
 
       // 2. Category
       let matchesCategory = selectedCategory === 'All';
-      if (!matchesCategory && dest.category) {
-        if (selectedCategory.toLowerCase() === 'historical' || selectedCategory.toLowerCase() === 'cultural') {
-          matchesCategory = dest.category.toLowerCase().includes('historical') || dest.category.toLowerCase().includes('cultural');
-        } else if (selectedCategory.toLowerCase() === 'wildlife' || selectedCategory.toLowerCase() === 'nature') {
-          matchesCategory = dest.category.toLowerCase().includes('wildlife') || dest.category.toLowerCase().includes('nature') || dest.category.toLowerCase().includes('forest');
+      if (!matchesCategory) {
+        const destCats = Array.isArray(dest.category)
+          ? dest.category.map(c => String(c).toLowerCase())
+          : [String(dest.category || '').toLowerCase()];
+        const selLower = selectedCategory.toLowerCase();
+
+        if (selLower === 'historical' || selLower === 'cultural') {
+          matchesCategory = destCats.some(c => c.includes('historical') || c.includes('cultural'));
+        } else if (selLower === 'wildlife' || selLower === 'nature') {
+          matchesCategory = destCats.some(c => c.includes('wildlife') || c.includes('nature') || c.includes('forest'));
         } else {
-          matchesCategory = dest.category.toLowerCase() === selectedCategory.toLowerCase();
+          matchesCategory = destCats.some(c => c === selLower);
         }
       }
 

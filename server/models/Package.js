@@ -36,7 +36,18 @@ const PackageSchema = new mongoose.Schema({
     languages: [{ type: String }],
     dailyRate: { type: Number, default: 0 }
   }],
-  pricingRules: { type: Object }
+  pricingRules: { type: Object },
+  // Extended Destination-centric Fields
+  destinationsCovered: [{ type: String }],
+  durationDays: { type: Number, default: 3 },
+  gallery: [{ type: String }],
+  dayByDayItinerary: [{
+    day: { type: Number },
+    title: { type: String },
+    description: { type: String },
+    activities: [{ type: String }]
+  }],
+  activities: [{ type: String }]
 }, { timestamps: true });
 
 module.exports = mongoose.model('Package', PackageSchema);

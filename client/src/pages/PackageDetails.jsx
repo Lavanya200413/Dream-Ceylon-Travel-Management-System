@@ -201,6 +201,65 @@ const PackageDetails = () => {
             </div>
           </div>
 
+          {/* DAY-BY-DAY ITINERARY SECTION */}
+          {pkg.dayByDayItinerary && pkg.dayByDayItinerary.length > 0 && (
+            <div className="bg-white rounded-3xl p-6 md:p-8 border border-gray-200 shadow-xs space-y-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-gray-100 pb-4">
+                <div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
+                    {pkg.durationDays || pkg.dayByDayItinerary.length}-Day Sri Lanka Tour Route
+                  </span>
+                  <h3 className="text-2xl font-bold text-gray-900 mt-2">
+                    Complete Day-by-Day Travel Itinerary
+                  </h3>
+                </div>
+                {pkg.destinationsCovered && (
+                  <span className="text-xs font-semibold text-gray-600 bg-gray-100 px-3.5 py-1.5 rounded-xl">
+                    Covering: {pkg.destinationsCovered.join(' • ')}
+                  </span>
+                )}
+              </div>
+
+              <div className="space-y-4">
+                {pkg.dayByDayItinerary.map((dayPlan) => (
+                  <div key={dayPlan.day} className="p-5 rounded-2xl border border-gray-200 bg-gray-50/60 hover:border-blue-300 transition flex gap-4">
+                    <div className="w-12 h-12 rounded-xl bg-blue-900 text-white font-extrabold flex flex-col items-center justify-center flex-shrink-0 shadow-xs">
+                      <span className="text-[10px] uppercase text-blue-200 leading-none">Day</span>
+                      <span className="text-lg leading-tight">{dayPlan.day}</span>
+                    </div>
+                    <div className="space-y-2 flex-1">
+                      <h4 className="text-base font-extrabold text-gray-900">{dayPlan.title}</h4>
+                      <p className="text-xs text-gray-600 leading-relaxed">{dayPlan.description}</p>
+                      {dayPlan.activities && dayPlan.activities.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 pt-1">
+                          {dayPlan.activities.map((act, aIdx) => (
+                            <span key={aIdx} className="text-[11px] font-semibold bg-white border border-gray-200 text-gray-700 px-2.5 py-0.5 rounded-md">
+                              ✓ {act}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* PACKAGE IMAGE GALLERY */}
+          {pkg.gallery && pkg.gallery.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="text-xl font-bold text-gray-900">Experience Gallery</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {pkg.gallery.map((imgUrl, gIdx) => (
+                  <div key={gIdx} className="h-48 rounded-2xl overflow-hidden shadow-xs border border-gray-200">
+                    <img src={imgUrl} alt={`Gallery ${gIdx + 1}`} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* SPECIAL SECTION: STANDARD PACKAGE GUIDE ADD-ON */}
           {pkg.packageName === 'Standard' && (
             <div className="bg-blue-50/80 border border-blue-200 p-6 rounded-2xl">

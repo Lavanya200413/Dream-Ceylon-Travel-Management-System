@@ -33,14 +33,16 @@ const Navbar = () => {
           <Link
             to="/"
             onClick={() => setMobileMenuOpen(false)}
-            className="flex items-center gap-2.5 text-xl font-extrabold tracking-tight text-white group"
+            className="flex items-center gap-3 text-xl font-extrabold tracking-tight text-white group"
           >
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 text-blue-950 flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
-              <Compass size={20} />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 text-blue-950 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+              <Compass size={22} />
             </div>
-            <div>
-              <span className="text-amber-400">Smart</span> Lanka
-              <span className="hidden sm:inline text-[10px] font-semibold uppercase tracking-widest text-blue-300 block -mt-1">
+            <div className="flex flex-col">
+              <span className="leading-tight text-lg sm:text-xl font-black">
+                <span className="text-amber-400">Smart Lanka</span>
+              </span>
+              <span className="text-[11px] font-semibold tracking-wider text-blue-200/90 uppercase -mt-0.5">
                 Dream Ceylon Planner
               </span>
             </div>
@@ -66,18 +68,18 @@ const Navbar = () => {
           {/* Right Controls: Currency Switcher + Auth */}
           <div className="hidden md:flex items-center gap-3">
             {/* Multi-Currency Selector (Module 8) */}
-            <div className="flex items-center bg-blue-900/90 border border-blue-700/80 rounded-xl px-2.5 py-1.5 text-xs">
+            <div className="flex items-center bg-blue-900/90 border border-blue-700/80 rounded-xl px-2.5 py-1.5 text-xs shadow-inner">
               <Globe size={13} className="text-amber-400 mr-1.5 flex-shrink-0" />
               <select
                 aria-label="Select Display Currency"
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value)}
-                className="bg-transparent text-white font-bold focus:outline-none cursor-pointer pr-1"
+                className="bg-blue-900 text-amber-300 font-extrabold focus:outline-none cursor-pointer pr-1 border-0"
               >
-                {Object.keys(currencyRates || { USD: 1, LKR: 300, EUR: 0.92, GBP: 0.79 }).map(
+                {Object.keys(currencyRates || { LKR: 300, USD: 1, EUR: 0.92, GBP: 0.79 }).map(
                   (code) => (
-                    <option key={code} value={code} className="text-gray-900 font-semibold">
-                      {code}
+                    <option key={code} value={code} className="bg-white text-gray-900 font-bold py-1">
+                      {code} ({currencyRates[code]?.symbol?.trim() || code})
                     </option>
                   )
                 )}
@@ -123,11 +125,11 @@ const Navbar = () => {
               aria-label="Mobile Currency Selector"
               value={currency}
               onChange={(e) => setCurrency(e.target.value)}
-              className="bg-blue-900 border border-blue-700 text-white text-xs font-bold rounded-lg px-2 py-1.5 md:hidden"
+              className="bg-blue-900 border border-blue-700 text-amber-300 text-xs font-bold rounded-lg px-2 py-1.5 md:hidden"
             >
-              {Object.keys(currencyRates || { USD: 1, LKR: 300 }).map((code) => (
-                <option key={code} value={code} className="text-gray-900">
-                  {code}
+              {Object.keys(currencyRates || { LKR: 300, USD: 1 }).map((code) => (
+                <option key={code} value={code} className="bg-white text-gray-900 font-bold">
+                  {code} ({currencyRates[code]?.symbol?.trim() || code})
                 </option>
               ))}
             </select>

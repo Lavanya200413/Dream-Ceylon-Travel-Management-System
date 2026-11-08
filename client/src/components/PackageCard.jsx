@@ -90,6 +90,12 @@ const PackageCard = ({ pkg }) => {
         <div className="mb-4">
           <h3 className="text-2xl font-extrabold text-gray-900 tracking-tight">{pkg.packageName} Package</h3>
           <p className="text-gray-500 text-sm mt-1 line-clamp-2 min-h-[40px]">{pkg.tagline || pkg.description}</p>
+          {pkg.destinationsCovered && pkg.destinationsCovered.length > 0 && (
+            <div className="mt-2 text-xs font-semibold text-blue-900 bg-blue-50/80 px-2.5 py-1 rounded-lg border border-blue-100 flex items-center gap-1.5 truncate">
+              <Compass size={13} className="text-blue-600 flex-shrink-0" />
+              <span>Route: {pkg.destinationsCovered.join(' • ')} ({pkg.durationDays || 3} Days)</span>
+            </div>
+          )}
         </div>
 
         {/* Pricing */}

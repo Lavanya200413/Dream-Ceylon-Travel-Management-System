@@ -13,6 +13,7 @@ import Guides from './pages/Guides';
 import Packages from './pages/Packages';
 import PackageDetails from './pages/PackageDetails';
 import Dashboard from './pages/Dashboard';
+import NotFound from './pages/NotFound';
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
           <Route path="/packages" element={<Packages />} />
           <Route path="/packages/:id" element={<PackageDetails />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
       <Footer />
