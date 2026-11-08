@@ -95,7 +95,7 @@ const Home = () => {
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 bg-amber-400/20 border border-amber-400/40 text-amber-300 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider mb-6 backdrop-blur-xs">
-              <Sparkles size={14} /> Smart Lanka Tourism Planner & Travel Management
+              <Sparkles size={14} /> Dream Ceylon (Smart Lanka Tourism Planner)
             </div>
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-tight mb-6">
               Discover the Pearl of the{' '}

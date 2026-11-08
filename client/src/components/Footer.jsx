@@ -13,12 +13,17 @@ const Footer = () => {
               <div className="w-8 h-8 rounded-lg bg-amber-400 text-blue-950 flex items-center justify-center">
                 <Compass size={18} />
               </div>
-              <span>
-                <span className="text-amber-400">Smart</span> Lanka
-              </span>
+              <div className="flex flex-col">
+                <span className="leading-tight text-lg font-black tracking-tight text-white">
+                  Dream <span className="text-amber-400">Ceylon</span>
+                </span>
+                <span className="text-[10px] font-medium tracking-wide text-gray-400">
+                  Smart Lanka Tourism Planner
+                </span>
+              </div>
             </Link>
             <p className="text-xs text-gray-400 leading-relaxed">
-              Smart Lanka Tourism Planner &amp; Travel Management System (Dream Ceylon). Personalized Sri Lankan itineraries, OpenStreetMap route navigation, dynamic tour packages, and verified local hospitality.
+              Dream Ceylon (Smart Lanka Tourism Planner). Personalized Sri Lankan itineraries, OpenStreetMap route navigation, dynamic tour packages, and verified local hospitality.
             </p>
             <div className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-2.5 py-1 rounded-full">
               <ShieldCheck size={13} /> Verified Sri Lanka Tourism Platform
@@ -93,7 +98,7 @@ const Footer = () => {
         </div>
 
         <div className="pt-6 border-t border-slate-800/80 flex flex-col sm:flex-row justify-between items-center gap-2 text-xs text-gray-500">
-          <p>© {new Date().getFullYear()} Smart Lanka Tourism Planner (Dream Ceylon). All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Dream Ceylon (Smart Lanka Tourism Planner). All rights reserved.</p>
           <p>SWT22022 – Practical for Internet Application Development</p>
         </div>
       </div>

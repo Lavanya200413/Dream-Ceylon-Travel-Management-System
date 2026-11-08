@@ -39,11 +39,11 @@ const Navbar = () => {
               <Compass size={22} />
             </div>
             <div className="flex flex-col">
-              <span className="leading-tight text-lg sm:text-xl font-black">
-                <span className="text-amber-400">Smart Lanka</span>
+              <span className="leading-tight text-lg sm:text-xl font-black tracking-tight text-white">
+                Dream <span className="text-amber-400">Ceylon</span>
               </span>
-              <span className="text-[11px] font-semibold tracking-wider text-blue-200/90 uppercase -mt-0.5">
-                Dream Ceylon Planner
+              <span className="text-[10px] sm:text-[11px] font-medium tracking-wide text-blue-200/90 -mt-0.5">
+                Smart Lanka Tourism Planner
               </span>
             </div>
           </Link>

@@ -147,7 +147,7 @@ const Dashboard = () => {
       <div className="bg-gradient-to-r from-blue-950 via-blue-900 to-indigo-900 rounded-3xl shadow-lg p-8 text-white flex flex-wrap justify-between items-center gap-4">
         <div>
           <span className="text-xs font-bold uppercase tracking-wider text-amber-300 bg-white/10 px-3 py-1 rounded-full">
-            Smart Lanka Portal
+            Dream Ceylon (Smart Lanka Tourism Planner)
           </span>
           <h1 className="text-3xl font-extrabold mt-2 mb-1">Welcome Back, {user.name}!</h1>
           <p className="text-blue-200 text-sm">

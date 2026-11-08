@@ -39,10 +39,10 @@ const Login = () => {
             </div>
             <div className="text-left">
               <span className="text-xl font-black text-blue-950 leading-tight block">
-                Smart Lanka
+                Dream Ceylon
               </span>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 block -mt-1">
-                Dream Ceylon Planner
+              <span className="text-[10px] font-semibold text-blue-600 block -mt-0.5">
+                Smart Lanka Tourism Planner
               </span>
             </div>
           </Link>
