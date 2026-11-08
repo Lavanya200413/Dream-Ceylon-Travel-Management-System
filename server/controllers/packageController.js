@@ -1,4 +1,13 @@
 const Package = require('../models/Package');
+const CurrencyRate = require('../models/CurrencyRate');
+
+const DEFAULT_RATES = {
+  USD: { code: 'USD', symbol: '$', rate: 1, label: 'US Dollar ($)' },
+  LKR: { code: 'LKR', symbol: 'Rs.', rate: 300, label: 'Sri Lankan Rupee (Rs.)' },
+  EUR: { code: 'EUR', symbol: '€', rate: 0.92, label: 'Euro (€)' },
+  GBP: { code: 'GBP', symbol: '£', rate: 0.79, label: 'British Pound (£)' },
+  AUD: { code: 'AUD', symbol: 'A$', rate: 1.52, label: 'Australian Dollar (A$)' }
+};
 
 exports.getPackages = async (req, res) => {
   try {
@@ -25,5 +34,34 @@ exports.createPackage = async (req, res) => {
     res.status(201).json({ success: true, data: newPackage });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
+  }
+};
+
+// @desc    Get multi-currency conversion rates (Module 8)
+// @route   GET /api/packages/currencies/rates
+// @access  Public
+exports.getCurrencyRates = async (req, res) => {
+  try {
+    const dbRates = await CurrencyRate.find({ baseCurrency: 'USD' });
+    const merged = { ...DEFAULT_RATES };
+    dbRates.forEach((r) => {
+      if (merged[r.quoteCurrency]) {
+        merged[r.quoteCurrency] = {
+          ...merged[r.quoteCurrency],
+          rate: r.rate
+        };
+      }
+    });
+    res.status(200).json({
+      success: true,
+      baseCurrency: 'USD',
+      data: merged
+    });
+  } catch (err) {
+    res.status(200).json({
+      success: true,
+      baseCurrency: 'USD',
+      data: DEFAULT_RATES
+    });
   }
 };

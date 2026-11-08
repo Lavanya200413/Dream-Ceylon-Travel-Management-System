@@ -3,9 +3,14 @@ import { Star } from 'lucide-react';
 import StarRating from './StarRating';
 
 /**
- * Displays average rating, total review count, and 1-5 star breakdown bars
+ * Displays average rating, total review count, and 5-to-1 star breakdown bars
  */
-const RatingSummary = ({ stats, loading = false }) => {
+const RatingSummary = ({
+  stats,
+  loading = false,
+  selectedStar = 'all',
+  onSelectStar = null
+}) => {
   if (loading) {
     return (
       <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 animate-pulse">
@@ -32,8 +37,8 @@ const RatingSummary = ({ stats, loading = false }) => {
           </div>
           <p className="text-xs font-medium text-gray-600">
             {totalReviews === 0
-              ? 'No ratings yet'
-              : `Based on ${totalReviews} verified ${totalReviews === 1 ? 'review' : 'reviews'}`}
+              ? 'No ratings yet — be the first to review'
+              : `Based on ${totalReviews} published ${totalReviews === 1 ? 'review' : 'reviews'}`}
           </p>
         </div>
 
@@ -42,9 +47,19 @@ const RatingSummary = ({ stats, loading = false }) => {
           {[5, 4, 3, 2, 1].map((star) => {
             const count = distribution[star] || 0;
             const percentage = totalReviews > 0 ? Math.round((count / totalReviews) * 100) : 0;
+            const isSelected = String(selectedStar) === String(star);
 
             return (
-              <div key={star} className="flex items-center gap-2 text-xs">
+              <button
+                key={star}
+                type="button"
+                onClick={() =>
+                  onSelectStar && onSelectStar(isSelected ? 'all' : String(star))
+                }
+                className={`w-full flex items-center gap-2 text-xs px-2 py-0.5 rounded-lg transition ${
+                  onSelectStar ? 'hover:bg-blue-100/60 cursor-pointer' : 'cursor-default'
+                } ${isSelected ? 'bg-blue-100/80 ring-1 ring-blue-300' : ''}`}
+              >
                 <span className="w-12 flex items-center justify-end gap-1 font-semibold text-gray-700">
                   {star} <Star size={11} className="text-yellow-500 fill-yellow-400" />
                 </span>
@@ -54,8 +69,10 @@ const RatingSummary = ({ stats, loading = false }) => {
                     style={{ width: `${percentage}%` }}
                   />
                 </div>
-                <span className="w-8 text-right text-gray-500 font-medium">{count}</span>
-              </div>
+                <span className="w-14 text-right text-gray-500 font-medium">
+                  {count} ({percentage}%)
+                </span>
+              </button>
             );
           })}
         </div>
@@ -65,4 +82,3 @@ const RatingSummary = ({ stats, loading = false }) => {
 };
 
 export default RatingSummary;
-

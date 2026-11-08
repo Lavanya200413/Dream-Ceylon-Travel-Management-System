@@ -423,8 +423,8 @@ const destinations = [
     estimatedVisitDuration: '2 - 3 hours',
     entryFee: 'LKR 2,000 / USD $10 (Foreign Adult)',
     tags: ['Historical', 'UNESCO Cave Temple', 'Murals', 'Buddha Statues', 'Sacred'],
-    image: 'https://images.unsplash.com/photo-1588258524675-c6350f5888a7?auto=format&fit=crop&w=1200&q=80',
-    imageUrl: 'https://images.unsplash.com/photo-1588258524675-c6350f5888a7?auto=format&fit=crop&w=1200&q=80'
+    image: 'https://images.unsplash.com/photo-1586861635167-e5223aadc9fe?auto=format&fit=crop&w=1200&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1586861635167-e5223aadc9fe?auto=format&fit=crop&w=1200&q=80'
   },
   {
     name: 'Temple of the Tooth (Kandy)',
@@ -441,8 +441,8 @@ const destinations = [
     estimatedVisitDuration: '2 hours',
     entryFee: 'LKR 2,000 (Foreign Adult)',
     tags: ['Historical', 'Sacred Relic', 'UNESCO Heritage', 'Royal Palace', 'Buddhist Culture'],
-    image: 'https://images.unsplash.com/photo-1588258524675-c6350f5888a7?auto=format&fit=crop&w=1200&q=80',
-    imageUrl: 'https://images.unsplash.com/photo-1588258524675-c6350f5888a7?auto=format&fit=crop&w=1200&q=80'
+    image: 'https://images.unsplash.com/photo-1546708973-b339540b5162?auto=format&fit=crop&w=1200&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1546708973-b339540b5162?auto=format&fit=crop&w=1200&q=80'
   },
   {
     name: 'Polonnaruwa Ancient City',
@@ -513,8 +513,8 @@ const destinations = [
     estimatedVisitDuration: '2 - 3 hours',
     entryFee: 'LKR 1,500 / USD $5',
     tags: ['Historical', 'Stone Staircase', 'Medieval Citadel', 'Sculptures', 'Off the Beaten Path'],
-    image: 'https://images.unsplash.com/photo-1588258524675-c6350f5888a7?auto=format&fit=crop&w=1200&q=80',
-    imageUrl: 'https://images.unsplash.com/photo-1588258524675-c6350f5888a7?auto=format&fit=crop&w=1200&q=80'
+    image: 'https://images.unsplash.com/photo-1586861635167-e5223aadc9fe?auto=format&fit=crop&w=1200&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1586861635167-e5223aadc9fe?auto=format&fit=crop&w=1200&q=80'
   },
 
   // ==========================================
@@ -777,8 +777,8 @@ const destinations = [
     estimatedVisitDuration: '1 - 2 hours',
     entryFee: 'Free Promenade Entry',
     tags: ['Lake', 'Heritage', 'Promenade', 'Kandy', 'Scenic Walk'],
-    image: 'https://images.unsplash.com/photo-1588258524675-c6350f5888a7?auto=format&fit=crop&w=1200&q=80',
-    imageUrl: 'https://images.unsplash.com/photo-1588258524675-c6350f5888a7?auto=format&fit=crop&w=1200&q=80'
+    image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80'
   },
   {
     name: 'Beira Lake',

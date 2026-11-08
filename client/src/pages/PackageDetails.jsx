@@ -14,7 +14,7 @@ const PackageDetails = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const { selectPackage, customizations, updateCustomizations, calculatePackageCost } = useContext(PackageContext);
+  const { selectPackage, customizations, updateCustomizations, calculatePackageCost, formatPrice } = useContext(PackageContext);
 
   // Local state for interactive customization on details page
   const [addGuide, setAddGuide] = useState(customizations.addGuide || false);
@@ -224,7 +224,7 @@ const PackageDetails = () => {
                   />
                   <div className="text-left">
                     <span className="block font-bold text-sm text-gray-900">Include Tour Guide</span>
-                    <span className="text-xs text-blue-700 font-semibold">+${pkg.guideAddonPrice || 45} / day</span>
+                    <span className="text-xs text-blue-700 font-semibold">+{formatPrice(pkg.guideAddonPrice || 45)} / day</span>
                   </div>
                 </label>
               </div>
@@ -262,7 +262,7 @@ const PackageDetails = () => {
                           {meal.name}
                         </span>
                         <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${meal.extraCostPerDay > 0 ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800'}`}>
-                          {meal.extraCostPerDay > 0 ? `+$${meal.extraCostPerDay}/day` : 'Included'}
+                          {meal.extraCostPerDay > 0 ? `+${formatPrice(meal.extraCostPerDay)}/day` : 'Included'}
                         </span>
                       </div>
                       <p className="text-xs text-gray-500 ml-5">{meal.description}</p>
@@ -348,16 +348,16 @@ const PackageDetails = () => {
               </div>
 
               <p className="text-xs text-gray-400">
-                Includes base ${pkg.baseCharge}/day per person
-                {costBreakdown.guideCost > 0 && ` + Guide add-on $${costBreakdown.guideCost}`}
-                {costBreakdown.mealExtraCost > 0 && ` + Gourmet meal premium $${costBreakdown.mealExtraCost}`}
+                Includes base {formatPrice(pkg.baseCharge)}/day per person
+                {costBreakdown.guideCost > 0 && ` + Guide add-on ${formatPrice(costBreakdown.guideCost)}`}
+                {costBreakdown.mealExtraCost > 0 && ` + Gourmet meal premium ${formatPrice(costBreakdown.mealExtraCost)}`}
               </p>
             </div>
 
             <div className="text-center md:text-right flex flex-col items-center md:items-end">
               <span className="text-xs uppercase tracking-wider text-gray-400 font-semibold">Total Estimated Cost</span>
-              <div className="text-5xl font-extrabold text-green-400 my-1">
-                ${costBreakdown.grandTotal}
+              <div className="text-4xl md:text-5xl font-extrabold text-green-400 my-1">
+                {formatPrice(costBreakdown.grandTotal)}
               </div>
               <button 
                 onClick={handleApplyAndContinue}

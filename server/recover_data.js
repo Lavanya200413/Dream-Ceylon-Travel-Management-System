@@ -46,8 +46,8 @@ const destinationsData = [
     rating: 4.5,
     viewCount: 1180,
     bestVisitTime: 'Evening',
-    image: 'https://images.unsplash.com/photo-1588258524675-c6350f5888a7?auto=format&fit=crop&w=1200&q=80',
-    imageUrl: 'https://images.unsplash.com/photo-1588258524675-c6350f5888a7?auto=format&fit=crop&w=1200&q=80'
+    image: 'https://images.unsplash.com/photo-1546708973-b339540b5162?auto=format&fit=crop&w=1200&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1546708973-b339540b5162?auto=format&fit=crop&w=1200&q=80'
   },
   {
     name: 'Galle Fort',
@@ -318,19 +318,16 @@ async function recoverData() {
       const existing = await Destination.findOne({ name: d.name });
       if (existing) {
         destExisting++;
-        // Update missing fields without deleting existing record
-        const updates = {};
-        if (!existing.image) updates.image = d.image;
-        if (!existing.imageUrl) updates.imageUrl = d.imageUrl;
+        // Update missing or broken image fields without deleting existing record
+        const updates = {
+          image: d.image,
+          imageUrl: d.imageUrl
+        };
         if (!existing.viewCount) updates.viewCount = d.viewCount;
 
-        if (Object.keys(updates).length > 0) {
-          await Destination.updateOne({ _id: existing._id }, { $set: updates });
-          destUpdated++;
-          console.log(`[UPDATE] Destination "${d.name}" updated with missing fields:`, Object.keys(updates));
-        } else {
-          console.log(`[PRESERVE] Destination "${d.name}" already fully intact.`);
-        }
+        await Destination.updateOne({ _id: existing._id }, { $set: updates });
+        destUpdated++;
+        console.log(`[UPDATE] Destination "${d.name}" synchronized with verified image URLs.`);
       } else {
         await Destination.create(d);
         destInserted++;
@@ -351,18 +348,9 @@ async function recoverData() {
       const existing = await Package.findOne({ packageName: p.packageName });
       if (existing) {
         pkgExisting++;
-        const updates = {};
-        if (!existing.image) updates.image = p.image;
-        if (!existing.imageUrl) updates.imageUrl = p.imageUrl;
-        if (!existing.features) updates.features = p.features;
-
-        if (Object.keys(updates).length > 0) {
-          await Package.updateOne({ _id: existing._id }, { $set: updates });
-          pkgUpdated++;
-          console.log(`[UPDATE] Package "${p.packageName}" updated with missing fields:`, Object.keys(updates));
-        } else {
-          console.log(`[PRESERVE] Package "${p.packageName}" already fully intact.`);
-        }
+        await Package.updateOne({ _id: existing._id }, { $set: p });
+        pkgUpdated++;
+        console.log(`[UPDATE] Package "${p.packageName}" synchronized with verified USD pricing & imagery.`);
       } else {
         await Package.create(p);
         pkgInserted++;

@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../services/api';
 import DestinationCard from '../components/DestinationCard';
 import MapView from '../components/MapView';
 import { 
   Search, SlidersHorizontal, X, MapPin, Grid, Map as MapIcon, 
-  Sparkles, RefreshCw, Compass, AlertCircle 
+  Sparkles, RefreshCw, Compass, AlertCircle, Award, Star, MessageSquare 
 } from 'lucide-react';
 
 /**
@@ -33,6 +34,8 @@ const PRESET_CATEGORIES = [
 
 const Destinations = () => {
   const [destinations, setDestinations] = useState([]);
+  const [popularDestinations, setPopularDestinations] = useState([]);
+  const [mostReviewedDestinations, setMostReviewedDestinations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -57,14 +60,17 @@ const Destinations = () => {
     setLoading(true);
     setError(null);
     try {
-      const [destRes, metaRes] = await Promise.all([
+      const [destRes, metaRes, popRes] = await Promise.all([
         api.get('/destinations'),
-        api.get('/destinations/meta/filters').catch(() => ({ data: { data: {} } }))
+        api.get('/destinations/meta/filters').catch(() => ({ data: { data: {} } })),
+        api.get('/reviews/popular/destinations', { params: { limit: 3, minReviews: 1 } }).catch(() => ({ data: { data: [] } }))
       ]);
 
       const rawData = destRes.data?.data ?? destRes.data?.destinations ?? destRes.data;
       const destinationList = Array.isArray(rawData) ? rawData : [];
       setDestinations(destinationList);
+      setPopularDestinations(popRes.data?.data || []);
+      setMostReviewedDestinations(popRes.data?.mostReviewed || []);
 
       const meta = metaRes.data?.data || {};
       setFilterMeta({
@@ -158,6 +164,56 @@ const Destinations = () => {
           Discover over 45 hand-picked destinations across tropical golden coastlines, misty cloud highlands, ancient UNESCO kingdoms, and untamed wildlife national parks.
         </p>
       </div>
+
+      {/* Top-Rated & Most-Reviewed Destinations Banner (Module 5 Popular Statistics) */}
+      {popularDestinations.length > 0 && (
+        <div className="mb-8 bg-gradient-to-r from-amber-50 via-orange-50/70 to-amber-50 border border-amber-200 rounded-3xl p-5 shadow-xs">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+            <div className="flex items-center gap-2">
+              <Award size={18} className="text-amber-600" />
+              <h2 className="text-sm font-extrabold text-amber-950 uppercase tracking-wider">
+                Highest-Rated & Most-Reviewed Sri Lankan Destinations
+              </h2>
+            </div>
+            {mostReviewedDestinations.length > 0 && (
+              <span className="text-[11px] font-bold text-amber-800 bg-white/80 px-2.5 py-1 rounded-full border border-amber-200 flex items-center gap-1">
+                <MessageSquare size={12} className="text-amber-600" />
+                Most Reviewed: {mostReviewedDestinations[0].name} ({mostReviewedDestinations[0].reviewCount} reviews)
+              </span>
+            )}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {popularDestinations.map((dest, idx) => (
+              <Link
+                key={dest._id}
+                to={`/destinations/${dest._id}`}
+                className="bg-white rounded-2xl p-3.5 border border-amber-200/80 flex items-center justify-between hover:shadow-md transition"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="w-7 h-7 rounded-full bg-amber-500 text-white font-extrabold text-xs flex items-center justify-center shrink-0">
+                    #{idx + 1}
+                  </span>
+                  <div className="truncate">
+                    <p className="font-bold text-gray-900 text-sm truncate">{dest.name}</p>
+                    <p className="text-xs text-gray-500 truncate">
+                      {dest.district} • {dest.category}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right shrink-0 ml-2">
+                  <div className="flex items-center gap-1 text-amber-600 font-extrabold text-xs justify-end">
+                    <Star size={13} className="fill-amber-400 text-amber-400" />
+                    <span>{Number(dest.rating || 0).toFixed(1)}</span>
+                  </div>
+                  <span className="text-[11px] text-gray-400">
+                    {dest.reviewCount || 0} {dest.reviewCount === 1 ? 'review' : 'reviews'}
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Main Search & Filter Control Bar */}
       <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-200 mb-8 space-y-4">

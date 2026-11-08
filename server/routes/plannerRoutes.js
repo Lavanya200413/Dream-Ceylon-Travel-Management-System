@@ -1,13 +1,22 @@
 const express = require('express');
-const { getRecommendations, createPlan } = require('../controllers/plannerController');
+const {
+  getRecommendations,
+  getHolidays,
+  getMyPlans,
+  createPlan,
+  deletePlan
+} = require('../controllers/plannerController');
 const { protect, authorize } = require('../middlewares/authMiddleware');
 
 const router = express.Router();
 
-router.use(protect);
-router.use(authorize('tourist', 'admin'));
+// Public holidays lookup for calendar schedule
+router.get('/holidays', getHolidays);
 
-router.get('/recommendations', getRecommendations);
-router.post('/plan', createPlan);
+router.use(protect);
+router.get('/recommendations', authorize('tourist', 'user', 'admin'), getRecommendations);
+router.get('/my-plans', getMyPlans);
+router.post('/plan', authorize('tourist', 'user', 'admin'), createPlan);
+router.delete('/plan/:id', deletePlan);
 
 module.exports = router;

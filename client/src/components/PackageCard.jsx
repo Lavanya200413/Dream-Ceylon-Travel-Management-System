@@ -4,7 +4,7 @@ import { PackageContext } from '../context/PackageContext';
 import { useNavigate } from 'react-router-dom';
 
 const PackageCard = ({ pkg }) => {
-  const { selectedPackage, selectPackage } = useContext(PackageContext);
+  const { selectedPackage, selectPackage, formatPrice } = useContext(PackageContext);
   const navigate = useNavigate();
   const [imageError, setImageError] = useState(false);
 
@@ -94,9 +94,9 @@ const PackageCard = ({ pkg }) => {
 
         {/* Pricing */}
         <div className="mb-6 p-4 bg-gray-50 rounded-xl border border-gray-100">
-          <div className="flex items-baseline">
-            <span className="text-4xl font-extrabold text-gray-900">${pkg.baseCharge}</span>
-            <span className="text-sm font-medium text-gray-500 ml-2">/ person per day</span>
+          <div className="flex items-baseline flex-wrap gap-1">
+            <span className="text-3xl font-extrabold text-gray-900">{formatPrice(pkg.baseCharge)}</span>
+            <span className="text-sm font-medium text-gray-500">/ person per day</span>
           </div>
           <p className="text-xs text-gray-400 mt-1">
             {pkg.packageName === 'Basic' && 'Covers standard private transport & driver only'}

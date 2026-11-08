@@ -1,27 +1,46 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   MapPin,
   Globe,
-  DollarSign,
   Award,
   MessageSquare,
   ChevronDown,
   ChevronUp,
   Search,
   CheckCircle2,
-  Sparkles
+  Sparkles,
+  Phone,
+  Edit3,
+  CalendarPlus,
+  Check
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import StarRating from '../components/StarRating';
 import ReviewList from '../components/ReviewList';
+import GuideManagementModal from '../components/GuideManagementModal';
+import { AuthContext } from '../context/AuthContext';
+import { PackageContext } from '../context/PackageContext';
 
 const Guides = () => {
+  const { user } = useContext(AuthContext);
+  const { formatPrice } = useContext(PackageContext);
+  const navigate = useNavigate();
+
   const [guides, setGuides] = useState([]);
   const [popularGuides, setPopularGuides] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedGuideId, setSelectedGuideId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('popular'); // 'popular', 'rating', 'price_low'
+
+  // Guide Profile Modal State (Module 4)
+  const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
+  const [guideToEdit, setGuideToEdit] = useState(null);
+
+  // Booking feedback state
+  const [bookingLoadingId, setBookingLoadingId] = useState(null);
+  const [bookedGuideIds, setBookedGuideIds] = useState({});
 
   const fetchGuidesData = async () => {
     setLoading(true);
@@ -73,6 +92,26 @@ const Guides = () => {
     );
   };
 
+  const handleBookGuide = async (guide) => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    setBookingLoadingId(guide._id);
+    try {
+      await api.post('/bookings', {
+        guideId: guide._id,
+        totalPrice: guide.dailyRate || 50,
+        status: 'confirmed'
+      });
+      setBookedGuideIds((prev) => ({ ...prev, [guide._id]: true }));
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to book guide.');
+    } finally {
+      setBookingLoadingId(null);
+    }
+  };
+
   const getGuideDisplayName = (guide) =>
     guide.name || guide.userId?.name || 'Certified National Tour Guide';
 
@@ -100,16 +139,31 @@ const Guides = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 py-12 space-y-10">
       {/* Header */}
-      <div className="text-center max-w-3xl mx-auto">
-        <span className="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-3.5 py-1.5 rounded-full border border-blue-200">
-          Verified Local Experts
-        </span>
-        <h1 className="text-4xl font-extrabold text-blue-950 mt-3 mb-3">
-          Certified Sri Lankan Tour Guides
-        </h1>
-        <p className="text-gray-600 text-base">
-          Browse licensed tour guides, inspect verified tourist ratings, and share your own feedback after your journey.
-        </p>
+      <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+        <div className="text-center md:text-left max-w-2xl">
+          <span className="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-3.5 py-1.5 rounded-full border border-blue-200">
+            Verified Local Experts • Module 4 & 5
+          </span>
+          <h1 className="text-4xl font-extrabold text-blue-950 mt-3 mb-2">
+            Certified Sri Lankan Tour Guides
+          </h1>
+          <p className="text-gray-600 text-base">
+            Browse licensed tour guides, book a specialist for your itinerary, inspect verified tourist ratings, and share your feedback.
+          </p>
+        </div>
+
+        {(user?.role === 'guide' || user?.role === 'admin') && (
+          <button
+            type="button"
+            onClick={() => {
+              setGuideToEdit(null);
+              setIsGuideModalOpen(true);
+            }}
+            className="bg-blue-900 hover:bg-blue-800 text-white font-bold text-sm px-6 py-3.5 rounded-2xl shadow-md transition flex items-center gap-2 whitespace-nowrap"
+          >
+            <Edit3 size={16} /> Manage My Guide Profile
+          </button>
+        )}
       </div>
 
       {/* Top Rated Banner (Popular-Item Statistics) */}
@@ -134,7 +188,7 @@ const Guides = () => {
                       #{idx + 1} Top Rated
                     </span>
                     <span className="text-xs text-blue-200 font-semibold">
-                      ${g.dailyRate}/day
+                      {formatPrice(g.dailyRate)}/day
                     </span>
                   </div>
                   <h3 className="font-bold text-base mt-2">{getGuideDisplayName(g)}</h3>
@@ -204,6 +258,11 @@ const Guides = () => {
             const isExpanded = selectedGuideId === guide._id;
             const reviewCount = guide.reviewCount || 0;
             const avgRating = guide.rating || 0;
+            const isOwner =
+              user &&
+              (user.role === 'admin' ||
+                guide.userId?._id === user._id ||
+                guide.userId === user._id);
 
             return (
               <div
@@ -213,15 +272,27 @@ const Guides = () => {
                 <div className="p-6 space-y-4">
                   <div className="flex justify-between items-start gap-4">
                     <div className="flex items-center gap-3.5">
-                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-900 to-indigo-800 text-white font-extrabold text-xl flex items-center justify-center shadow-xs">
-                        {displayName.charAt(0).toUpperCase()}
-                      </div>
+                      {guide.image ? (
+                        <img
+                          src={guide.image}
+                          alt={displayName}
+                          className="w-16 h-16 rounded-2xl object-cover border border-gray-200 shadow-xs flex-shrink-0"
+                        />
+                      ) : (
+                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-900 to-indigo-800 text-white font-extrabold text-xl flex items-center justify-center shadow-xs flex-shrink-0">
+                          {displayName.charAt(0).toUpperCase()}
+                        </div>
+                      )}
                       <div>
                         <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="text-xl font-bold text-gray-900">{displayName}</h3>
-                          {guide.availability && (
+                          {guide.availability ? (
                             <span className="inline-flex items-center gap-1 text-xs font-semibold bg-green-50 text-green-700 px-2.5 py-0.5 rounded-full border border-green-200">
                               <CheckCircle2 size={12} /> Available
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-xs font-semibold bg-gray-100 text-gray-600 px-2.5 py-0.5 rounded-full">
+                              Busy
                             </span>
                           )}
                         </div>
@@ -236,12 +307,18 @@ const Guides = () => {
                             ({reviewCount} {reviewCount === 1 ? 'review' : 'reviews'})
                           </span>
                         </div>
+
+                        {guide.phone && (
+                          <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+                            <Phone size={12} className="text-blue-600" /> {guide.phone}
+                          </p>
+                        )}
                       </div>
                     </div>
 
-                    <div className="text-right">
+                    <div className="text-right flex-shrink-0">
                       <span className="text-2xl font-extrabold text-blue-900">
-                        ${guide.dailyRate}
+                        {formatPrice(guide.dailyRate)}
                       </span>
                       <span className="block text-xs text-gray-500">per day</span>
                     </div>
@@ -269,26 +346,63 @@ const Guides = () => {
                     </div>
                   </div>
 
-                  {/* Toggle Reviews Button */}
-                  <div className="pt-3 border-t border-gray-100 flex justify-between items-center">
-                    <span className="text-xs text-gray-500 flex items-center gap-1.5">
-                      <Award size={14} className="text-amber-500" />
-                      Licensed SLTD Guide
-                    </span>
+                  {/* Action & Toggle Reviews Bar */}
+                  <div className="pt-3 border-t border-gray-100 flex flex-wrap justify-between items-center gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500 flex items-center gap-1">
+                        <Award size={14} className="text-amber-500" />
+                        Licensed SLTD Guide
+                      </span>
 
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setSelectedGuideId(isExpanded ? null : guide._id)
-                      }
-                      className="inline-flex items-center gap-2 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-2.5 rounded-xl transition"
-                    >
-                      <MessageSquare size={14} />
-                      {isExpanded
-                        ? 'Hide Reviews & Ratings'
-                        : `Reviews & Ratings (${reviewCount})`}
-                      {isExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
-                    </button>
+                      {isOwner && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setGuideToEdit(guide);
+                            setIsGuideModalOpen(true);
+                          }}
+                          className="text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition flex items-center gap-1"
+                        >
+                          <Edit3 size={12} /> Edit
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {guide.availability && (
+                        <button
+                          type="button"
+                          disabled={bookingLoadingId === guide._id || bookedGuideIds[guide._id]}
+                          onClick={() => handleBookGuide(guide)}
+                          className={`inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-2.5 rounded-xl transition shadow-2xs ${
+                            bookedGuideIds[guide._id]
+                              ? 'bg-green-600 text-white'
+                              : 'bg-blue-900 hover:bg-blue-800 text-white'
+                          }`}
+                        >
+                          {bookedGuideIds[guide._id] ? (
+                            <>
+                              <Check size={14} /> Guide Booked
+                            </>
+                          ) : (
+                            <>
+                              <CalendarPlus size={14} />
+                              {bookingLoadingId === guide._id ? 'Booking...' : 'Book Guide'}
+                            </>
+                          )}
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => setSelectedGuideId(isExpanded ? null : guide._id)}
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 px-3.5 py-2.5 rounded-xl transition"
+                      >
+                        <MessageSquare size={14} />
+                        {isExpanded ? 'Hide Reviews' : `Reviews (${reviewCount})`}
+                        {isExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -308,6 +422,14 @@ const Guides = () => {
           })}
         </div>
       )}
+
+      {/* Guide Profile Registration / Update Modal */}
+      <GuideManagementModal
+        isOpen={isGuideModalOpen}
+        onClose={() => setIsGuideModalOpen(false)}
+        existingProfile={guideToEdit}
+        onProfileUpdated={() => fetchGuidesData()}
+      />
     </div>
   );
 };

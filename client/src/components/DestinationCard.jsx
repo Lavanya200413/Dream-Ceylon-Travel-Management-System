@@ -20,8 +20,11 @@ const CATEGORY_COLORS = {
 
 const DestinationCard = ({ destination }) => {
   const [imageError, setImageError] = useState(false);
-  const imageUrl = destination.image || destination.imageUrl;
-  const categoryBadgeClass = CATEGORY_COLORS[destination.category] || 'bg-blue-900/90 text-white';
+  const imageUrl = destination.image || destination.imageUrl || destination.images?.[0];
+  const primaryCategory = Array.isArray(destination.category)
+    ? destination.category[0]
+    : destination.category;
+  const categoryBadgeClass = CATEGORY_COLORS[primaryCategory] || 'bg-blue-900/90 text-white';
 
   return (
     <Link 
@@ -44,14 +47,14 @@ const DestinationCard = ({ destination }) => {
             />
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-blue-950 via-blue-900 to-indigo-900 text-white p-4 text-center">
-              <span className="text-sm font-bold opacity-80 uppercase tracking-widest">{destination.category}</span>
+              <span className="text-sm font-bold opacity-80 uppercase tracking-widest">{primaryCategory}</span>
               <span className="text-lg font-extrabold mt-1">{destination.name}</span>
             </div>
           )}
 
           {/* Category Pill Tag */}
           <span className={`absolute top-3 right-3 z-20 backdrop-blur-md text-[11px] font-bold px-3 py-1 rounded-full shadow-sm border border-white/20 uppercase tracking-wider ${categoryBadgeClass}`}>
-            {destination.category}
+            {primaryCategory}
           </span>
 
           {/* District & Province Tag */}
@@ -68,12 +71,13 @@ const DestinationCard = ({ destination }) => {
               <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-700 transition-colors line-clamp-1">
                 {destination.name}
               </h3>
-              {destination.rating && (
-                <span className="flex items-center text-xs font-extrabold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 flex-shrink-0">
-                  <Star size={12} className="mr-1 fill-amber-500 text-amber-500" /> 
-                  {destination.rating.toFixed(1)}
-                </span>
-              )}
+              <span className="flex items-center text-xs font-extrabold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 flex-shrink-0">
+                <Star size={12} className="mr-1 fill-amber-500 text-amber-500" /> 
+                {destination.rating > 0 ? Number(destination.rating).toFixed(1) : 'New'}
+                {destination.reviewCount > 0 && (
+                  <span className="ml-1 font-normal text-amber-600/80">({destination.reviewCount})</span>
+                )}
+              </span>
             </div>
 
             <p className="text-gray-600 text-xs leading-relaxed line-clamp-2 mb-3">

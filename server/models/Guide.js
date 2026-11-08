@@ -3,7 +3,9 @@ const mongoose = require('mongoose');
 const GuideSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   name: { type: String },
+  phone: { type: String },
   bio: { type: String },
+  image: { type: String },
   serviceAreas: [{ type: String }],
   languages: [{ type: String }],
   dailyRate: { type: Number, required: true },

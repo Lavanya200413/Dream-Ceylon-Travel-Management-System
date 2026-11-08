@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   MapPin,
   Building2,
@@ -9,19 +9,41 @@ import {
   ChevronUp,
   Search,
   CheckCircle2,
-  Sparkles
+  Sparkles,
+  Phone,
+  Plus,
+  Edit3,
+  Trash2,
+  CalendarPlus,
+  Check
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import StarRating from '../components/StarRating';
 import ReviewList from '../components/ReviewList';
+import HotelManagementModal from '../components/HotelManagementModal';
+import { AuthContext } from '../context/AuthContext';
+import { PackageContext } from '../context/PackageContext';
 
 const Hotels = () => {
+  const { user } = useContext(AuthContext);
+  const { formatPrice } = useContext(PackageContext);
+  const navigate = useNavigate();
+
   const [hotels, setHotels] = useState([]);
   const [popularHotels, setPopularHotels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedHotelId, setSelectedHotelId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('popular'); // 'popular', 'rating', 'price_low'
+
+  // Hotel Management Modal State (Module 4)
+  const [isHotelModalOpen, setIsHotelModalOpen] = useState(false);
+  const [hotelToEdit, setHotelToEdit] = useState(null);
+
+  // Booking feedback state
+  const [bookingLoadingId, setBookingLoadingId] = useState(null);
+  const [bookedHotelIds, setBookedHotelIds] = useState({});
 
   const fetchHotelsData = async () => {
     setLoading(true);
@@ -72,6 +94,36 @@ const Hotels = () => {
     );
   };
 
+  const handleDeleteHotel = async (hotelId) => {
+    if (!window.confirm('Are you sure you want to delete this hotel property?')) return;
+    try {
+      await api.delete(`/hotels/${hotelId}`);
+      fetchHotelsData();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to delete hotel');
+    }
+  };
+
+  const handleBookHotel = async (hotel) => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    setBookingLoadingId(hotel._id);
+    try {
+      await api.post('/bookings', {
+        hotelId: hotel._id,
+        totalPrice: hotel.pricePerNight || 100,
+        status: 'confirmed'
+      });
+      setBookedHotelIds((prev) => ({ ...prev, [hotel._id]: true }));
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to book hotel stay.');
+    } finally {
+      setBookingLoadingId(null);
+    }
+  };
+
   const filteredHotels = hotels
     .filter((h) => {
       if (!searchTerm.trim()) return true;
@@ -95,16 +147,31 @@ const Hotels = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 py-12 space-y-10">
       {/* Header */}
-      <div className="text-center max-w-3xl mx-auto">
-        <span className="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-3.5 py-1.5 rounded-full border border-blue-200">
-          Curated Sri Lankan Stays
-        </span>
-        <h1 className="text-4xl font-extrabold text-blue-950 mt-3 mb-3">
-          Partner Hotels & Resorts
-        </h1>
-        <p className="text-gray-600 text-base">
-          Explore handpicked hotels across Sri Lanka, compare guest ratings, and write reviews for your completed stays.
-        </p>
+      <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+        <div className="text-center md:text-left max-w-2xl">
+          <span className="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-3.5 py-1.5 rounded-full border border-blue-200">
+            Curated Sri Lankan Stays • Module 4 & 5
+          </span>
+          <h1 className="text-4xl font-extrabold text-blue-950 mt-3 mb-2">
+            Partner Hotels & Resorts
+          </h1>
+          <p className="text-gray-600 text-base">
+            Explore handpicked hotels across Sri Lanka, book your stay, compare guest ratings, and write reviews for your completed visits.
+          </p>
+        </div>
+
+        {(user?.role === 'hotel_owner' || user?.role === 'admin') && (
+          <button
+            type="button"
+            onClick={() => {
+              setHotelToEdit(null);
+              setIsHotelModalOpen(true);
+            }}
+            className="bg-blue-900 hover:bg-blue-800 text-white font-bold text-sm px-6 py-3.5 rounded-2xl shadow-md transition flex items-center gap-2 whitespace-nowrap"
+          >
+            <Plus size={16} /> Register Partner Hotel
+          </button>
+        )}
       </div>
 
       {/* Top Rated Banner (Popular-Item Statistics) */}
@@ -129,7 +196,7 @@ const Hotels = () => {
                       #{idx + 1} Guest Pick
                     </span>
                     <span className="text-xs text-blue-200 font-semibold">
-                      ${h.pricePerNight}/night
+                      {formatPrice(h.pricePerNight)}/night
                     </span>
                   </div>
                   <h3 className="font-bold text-base mt-2">{h.name}</h3>
@@ -198,6 +265,12 @@ const Hotels = () => {
             const isExpanded = selectedHotelId === hotel._id;
             const reviewCount = hotel.reviewCount || 0;
             const avgRating = hotel.rating || 0;
+            const hotelImg = hotel.image || hotel.imageUrl;
+            const isOwner =
+              user &&
+              (user.role === 'admin' ||
+                hotel.ownerId?._id === user._id ||
+                hotel.ownerId === user._id);
 
             return (
               <div
@@ -205,23 +278,36 @@ const Hotels = () => {
                 className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden transition-all hover:shadow-md"
               >
                 {/* Top visual banner */}
-                <div className="h-36 bg-gradient-to-r from-blue-900 via-indigo-900 to-teal-800 p-6 flex flex-col justify-between text-white relative">
-                  <div className="flex justify-between items-center">
-                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-white/20 backdrop-blur-xs px-3 py-1 rounded-full">
+                <div className="h-48 bg-gradient-to-r from-blue-900 via-indigo-900 to-teal-800 p-6 flex flex-col justify-between text-white relative overflow-hidden">
+                  {hotelImg && (
+                    <img
+                      src={hotelImg}
+                      alt={hotel.name}
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-black/30" />
+
+                  <div className="relative z-10 flex justify-between items-center">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-black/50 backdrop-blur-xs px-3 py-1 rounded-full">
                       <MapPin size={12} /> {hotel.location}
                     </span>
-                    {hotel.availability && (
+                    {hotel.availability ? (
                       <span className="inline-flex items-center gap-1 text-xs font-bold bg-green-500/90 text-white px-2.5 py-0.5 rounded-full">
                         <CheckCircle2 size={11} /> Available
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-xs font-bold bg-gray-700/90 text-white px-2.5 py-0.5 rounded-full">
+                        Sold Out
                       </span>
                     )}
                   </div>
 
-                  <div className="flex justify-between items-end">
+                  <div className="relative z-10 flex justify-between items-end gap-2">
                     <h3 className="text-2xl font-extrabold drop-shadow-xs">{hotel.name}</h3>
-                    <div className="text-right">
+                    <div className="text-right flex-shrink-0">
                       <span className="text-2xl font-extrabold text-amber-300">
-                        ${hotel.pricePerNight}
+                        {formatPrice(hotel.pricePerNight)}
                       </span>
                       <span className="block text-[11px] text-blue-100">per night</span>
                     </div>
@@ -242,9 +328,9 @@ const Hotels = () => {
                       </span>
                     </div>
 
-                    {hotel.ownerId?.name && (
-                      <span className="text-xs text-gray-400">
-                        Partner: {hotel.ownerId.name}
+                    {hotel.phone && (
+                      <span className="text-xs text-gray-500 flex items-center gap-1">
+                        <Phone size={12} className="text-blue-600" /> {hotel.phone}
                       </span>
                     )}
                   </div>
@@ -283,25 +369,71 @@ const Hotels = () => {
                   )}
 
                   {/* Action bar */}
-                  <div className="pt-3 border-t border-gray-100 flex justify-between items-center">
-                    <span className="text-xs text-gray-500 flex items-center gap-1.5">
-                      <Building2 size={14} className="text-blue-600" />
-                      Verified Partner Property
-                    </span>
+                  <div className="pt-3 border-t border-gray-100 flex flex-wrap justify-between items-center gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500 flex items-center gap-1">
+                        <Building2 size={14} className="text-blue-600" />
+                        Verified Partner
+                      </span>
 
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setSelectedHotelId(isExpanded ? null : hotel._id)
-                      }
-                      className="inline-flex items-center gap-2 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-2.5 rounded-xl transition"
-                    >
-                      <MessageSquare size={14} />
-                      {isExpanded
-                        ? 'Hide Guest Reviews'
-                        : `Guest Reviews (${reviewCount})`}
-                      {isExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
-                    </button>
+                      {isOwner && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setHotelToEdit(hotel);
+                              setIsHotelModalOpen(true);
+                            }}
+                            className="text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1.5 rounded-lg transition flex items-center gap-1"
+                          >
+                            <Edit3 size={12} /> Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteHotel(hotel._id)}
+                            className="text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 px-2.5 py-1.5 rounded-lg transition flex items-center gap-1"
+                          >
+                            <Trash2 size={12} /> Delete
+                          </button>
+                        </>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {hotel.availability && (
+                        <button
+                          type="button"
+                          disabled={bookingLoadingId === hotel._id || bookedHotelIds[hotel._id]}
+                          onClick={() => handleBookHotel(hotel)}
+                          className={`inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-2.5 rounded-xl transition shadow-2xs ${
+                            bookedHotelIds[hotel._id]
+                              ? 'bg-green-600 text-white'
+                              : 'bg-blue-900 hover:bg-blue-800 text-white'
+                          }`}
+                        >
+                          {bookedHotelIds[hotel._id] ? (
+                            <>
+                              <Check size={14} /> Stay Booked
+                            </>
+                          ) : (
+                            <>
+                              <CalendarPlus size={14} />
+                              {bookingLoadingId === hotel._id ? 'Booking...' : 'Book Stay'}
+                            </>
+                          )}
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => setSelectedHotelId(isExpanded ? null : hotel._id)}
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 px-3.5 py-2.5 rounded-xl transition"
+                      >
+                        <MessageSquare size={14} />
+                        {isExpanded ? 'Hide Reviews' : `Reviews (${reviewCount})`}
+                        {isExpanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -321,6 +453,14 @@ const Hotels = () => {
           })}
         </div>
       )}
+
+      {/* Hotel Registration / Edit Modal */}
+      <HotelManagementModal
+        isOpen={isHotelModalOpen}
+        onClose={() => setIsHotelModalOpen(false)}
+        hotelToEdit={hotelToEdit}
+        onHotelSaved={() => fetchHotelsData()}
+      />
     </div>
   );
 };

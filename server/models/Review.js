@@ -8,7 +8,16 @@ const ReportSchema = new mongoose.Schema({
   },
   reason: {
     type: String,
-    enum: ['inappropriate', 'abusive', 'spam', 'irrelevant', 'other'],
+    enum: [
+      'spam',
+      'offensive',
+      'fake',
+      'misleading',
+      'irrelevant',
+      'inappropriate',
+      'abusive',
+      'other'
+    ],
     required: true
   },
   details: {
@@ -35,7 +44,7 @@ const ModerationHistorySchema = new mongoose.Schema({
   },
   action: {
     type: String,
-    enum: ['hide', 'restore', 'remove', 'dismiss_reports'],
+    enum: ['approve', 'restore', 'hide', 'reject', 'remove', 'dismiss_reports'],
     required: true
   },
   note: {
@@ -58,8 +67,8 @@ const ReviewSchema = new mongoose.Schema({
   targetType: {
     type: String,
     enum: {
-      values: ['hotel', 'guide'],
-      message: 'Target type must be either hotel or guide'
+      values: ['destination', 'hotel', 'guide'],
+      message: 'Target type must be destination, hotel, or guide'
     },
     required: [true, 'Target type is required']
   },
@@ -95,7 +104,7 @@ const ReviewSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['active', 'hidden', 'removed'],
+    enum: ['active', 'published', 'pending', 'hidden', 'rejected', 'removed'],
     default: 'active'
   },
   isReported: {
@@ -127,8 +136,9 @@ const ReviewSchema = new mongoose.Schema({
   }
 });
 
-// Indexes for fast target lookup, author lookup, and moderation filtering
+// Indexes for fast target lookup, sorting, author lookup, and moderation filtering
 ReviewSchema.index({ targetType: 1, targetId: 1, status: 1, createdAt: -1 });
+ReviewSchema.index({ targetType: 1, targetId: 1, status: 1, score: -1 });
 ReviewSchema.index({ authorId: 1, targetType: 1, targetId: 1 });
 ReviewSchema.index({ isReported: 1, status: 1 });
 

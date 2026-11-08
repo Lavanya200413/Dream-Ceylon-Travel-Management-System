@@ -4,11 +4,15 @@ const HotelSchema = new mongoose.Schema({
   ownerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   name: { type: String, required: true },
   location: { type: String, required: true },
+  phone: { type: String },
   description: { type: String },
+  image: { type: String },
+  imageUrl: { type: String },
   rooms: [{
     type: { type: String },
     capacity: { type: Number },
-    count: { type: Number }
+    count: { type: Number },
+    price: { type: Number }
   }],
   facilities: [{ type: String }],
   pricePerNight: { type: Number, required: true },

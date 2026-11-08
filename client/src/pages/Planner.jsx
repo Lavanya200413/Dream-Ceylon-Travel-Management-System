@@ -13,7 +13,8 @@ import MapView from '../components/MapView';
 import { 
   Car, Home, Utensils, Compass, Check, X, Sparkles, 
   ShieldCheck, AlertCircle, Info, ChevronRight, DollarSign,
-  MapPin, Navigation, Clock, Bike, Route, RefreshCw, Search
+  MapPin, Navigation, Clock, Bike, Route, RefreshCw, Search,
+  Calendar, Save, CheckCircle2
 } from 'lucide-react';
 
 /**
@@ -120,7 +121,8 @@ const Planner = () => {
     selectPackage, 
     customizations, 
     updateCustomizations, 
-    calculatePackageCost 
+    calculatePackageCost,
+    formatPrice
   } = useContext(PackageContext);
 
   const navigate = useNavigate();
@@ -128,6 +130,9 @@ const Planner = () => {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState(null);
   const [availablePackages, setAvailablePackages] = useState([]);
+  const [holidays, setHolidays] = useState([]);
+  const [savingPlan, setSavingPlan] = useState(false);
+  const [planSavedSuccess, setPlanSavedSuccess] = useState(false);
 
   // ==========================================
   // MODULE 2: MAP, ROUTE & VEHICLE STATES
@@ -152,6 +157,7 @@ const Planner = () => {
   const [routeError, setRouteError] = useState(null);
   
   const [formData, setFormData] = useState({
+    startDate: new Date(Date.now() + 86400000).toISOString().split('T')[0],
     days: 3,
     travelers: 2,
     interests: [],
@@ -176,11 +182,15 @@ const Planner = () => {
       }
 
       try {
-        const res = await api.get('/packages');
-        const list = res.data?.data || res.data || [];
+        const [pkgRes, holRes] = await Promise.all([
+          api.get('/packages'),
+          api.get('/planner/holidays').catch(() => ({ data: { data: [] } }))
+        ]);
+        const list = pkgRes.data?.data || pkgRes.data || [];
         const order = { Basic: 1, Standard: 2, Premium: 3 };
         list.sort((a, b) => (order[a.packageName] || 9) - (order[b.packageName] || 9));
         setAvailablePackages(list);
+        setHolidays(holRes.data?.data || []);
 
         if (!selectedPackage && list.length > 0) {
           const defaultPkg = list.find(p => p.packageName === 'Standard') || list[0];
@@ -298,44 +308,103 @@ const Planner = () => {
     }
     setLoading(true);
     setRouteError(null);
+    setPlanSavedSuccess(false);
 
     try {
       const res = await api.get('/destinations');
-      let dests = res.data?.data || res.data || [];
+      const allDests = (res.data?.data || res.data || []).filter(d => d.latitude && d.longitude);
+      let dests = [...allDests];
       
       if (formData.interests.length > 0) {
         dests = dests.filter(d => {
+          const cats = Array.isArray(d.category)
+            ? d.category.map(c => String(c).toLowerCase())
+            : [String(d.category || '').toLowerCase()];
           return formData.interests.some(interest => {
-            if (interest === 'Cultural' || interest === 'Historical') {
-              return d.category === 'Historical' || d.category === 'Cultural';
+            const q = interest.toLowerCase();
+            if (q === 'cultural' || q === 'historical') {
+              return cats.includes('historical') || cats.includes('cultural') || cats.includes('heritage');
             }
-            if (interest === 'Wildlife' || interest === 'Forest' || interest === 'Nature') {
-              return d.category === 'Wildlife' || d.category === 'Nature' || d.category === 'Forest';
+            if (q === 'wildlife' || q === 'forest' || q === 'nature') {
+              return cats.includes('wildlife') || cats.includes('nature') || cats.includes('forest');
             }
-            return d.category?.toLowerCase() === interest.toLowerCase();
+            return cats.includes(q);
           });
         });
       }
       
       if (formData.weatherPreference === 'Cold') {
-        dests = dests.filter(d => ['Nuwara Eliya', 'Badulla'].includes(d.district));
+        const coldFiltered = dests.filter(d => ['Nuwara Eliya', 'Badulla', 'Kandy', 'Matale'].includes(d.district));
+        if (coldFiltered.length > 0) dests = coldFiltered;
       } else if (formData.weatherPreference === 'Hot') {
-        dests = dests.filter(d => !['Nuwara Eliya', 'Badulla'].includes(d.district));
+        const hotFiltered = dests.filter(d => !['Nuwara Eliya', 'Badulla'].includes(d.district));
+        if (hotFiltered.length > 0) dests = hotFiltered;
       }
       
-      const finalDests = dests.filter(d => d.latitude && d.longitude).slice(0, formData.days);
+      // Ensure we have enough destinations for the requested days
+      if (dests.length < formData.days) {
+        const existingIds = new Set(dests.map(d => d._id));
+        const fillers = allDests
+          .filter(d => !existingIds.has(d._id))
+          .sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        dests = [...dests, ...fillers];
+      }
+
+      const finalDests = dests.slice(0, formData.days);
       
+      // Build Day-by-Day Smart Schedule & Holiday Calendar (Modules 1 & 6)
+      const baseStartDate = formData.startDate ? new Date(formData.startDate) : new Date(Date.now() + 86400000);
+      const dailySchedule = finalDests.map((dest, idx) => {
+        const dDate = new Date(baseStartDate);
+        dDate.setDate(baseStartDate.getDate() + idx);
+        const isoDate = dDate.toISOString().split('T')[0];
+        const monthDay = isoDate.slice(5); // MM-DD
+        const matchingHoliday = holidays.find(h => {
+          if (!h.date) return false;
+          const hIso = new Date(h.date).toISOString().split('T')[0];
+          return hIso === isoDate || hIso.slice(5) === monthDay;
+        });
+
+        return {
+          day: idx + 1,
+          date: isoDate,
+          formattedDate: dDate.toLocaleDateString('en-US', {
+            weekday: 'short',
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+          }),
+          holiday: matchingHoliday ? { name: matchingHoliday.name, type: matchingHoliday.type } : null,
+          destination: dest,
+          morningSlot: '08:30 AM – 12:00 PM',
+          afternoonSlot: '01:30 PM – 05:00 PM'
+        };
+      });
+
+      const endDateObj = new Date(baseStartDate);
+      endDateObj.setDate(baseStartDate.getDate() + Math.max(0, formData.days - 1));
+
       // Calculate dynamic cost based on package rules and selections
       const costCalculation = calculatePackageCost(activePackage, formData.days, formData.travelers, customizations);
 
       setResults({
+        startDate: baseStartDate.toISOString().split('T')[0],
+        endDate: endDateObj.toISOString().split('T')[0],
         startLocation: { ...startLocation },
         destinations: finalDests,
+        dailySchedule,
         costBreakdown: costCalculation,
         estimatedCost: costCalculation.grandTotal,
         packageSnapshot: activePackage,
         customizationsSnapshot: { ...customizations },
-        itinerary: finalDests.map((d, i) => ({ day: i + 1, ...d }))
+        itinerary: dailySchedule.map(s => ({
+          day: s.day,
+          date: s.date,
+          destinationName: s.destination.name,
+          district: s.destination.district,
+          timeSlot: `${s.morningSlot} & ${s.afternoonSlot}`,
+          holidayNote: s.holiday ? `${s.holiday.name} (${s.holiday.type})` : ''
+        }))
       });
       
       await fetchMultiDestinationRoute(startLocation, finalDests, formData.vehicleType);
@@ -344,6 +413,44 @@ const Planner = () => {
     } catch (err) {
       console.error(err);
       setLoading(false);
+    }
+  };
+
+  // Persist TourPlan & Booking to MongoDB (Modules 1, 3 & 6)
+  const handleSavePlanAndBook = async () => {
+    if (!results) return;
+    setSavingPlan(true);
+    try {
+      const planRes = await api.post('/planner/plan', {
+        title: `${formData.days}-Day ${results.packageSnapshot?.packageName || 'Smart'} Sri Lanka Tour`,
+        startDate: results.startDate,
+        endDate: results.endDate,
+        days: formData.days,
+        travelers: formData.travelers,
+        budget: formData.budget,
+        interests: formData.interests,
+        weatherPreference: formData.weatherPreference,
+        transportType: formData.vehicleType,
+        packageName: results.packageSnapshot?.packageName || 'Standard',
+        estimatedCost: results.estimatedCost,
+        startLocation: results.startLocation,
+        destinations: results.destinations.map(d => d._id),
+        itinerary: results.itinerary
+      });
+
+      const createdPlan = planRes.data?.data;
+      await api.post('/bookings', {
+        tourPlanId: createdPlan?._id || undefined,
+        packageId: results.packageSnapshot?._id || undefined,
+        totalPrice: results.estimatedCost,
+        status: 'confirmed'
+      });
+
+      setPlanSavedSuccess(true);
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to save itinerary to your profile.');
+    } finally {
+      setSavingPlan(false);
     }
   };
 
@@ -428,7 +535,7 @@ const Planner = () => {
 
                             <h3 className="text-lg font-bold text-gray-900">{pkg.packageName} Package</h3>
                             <div className="text-2xl font-extrabold text-gray-900 my-1">
-                              ${pkg.baseCharge} <span className="text-xs font-normal text-gray-500">/ person/day</span>
+                              {formatPrice(pkg.baseCharge)} <span className="text-xs font-normal text-gray-500">/ person/day</span>
                             </div>
 
                             <p className="text-xs text-gray-600 mb-3 line-clamp-2">{pkg.description}</p>
@@ -466,8 +573,21 @@ const Planner = () => {
 
                   {/* Trip Basics Inputs */}
                   <div className="pt-4 border-t border-gray-100">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4">Trip Duration & Party Size</h3>
-                    <div className="grid md:grid-cols-2 gap-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                      <Calendar size={19} className="text-blue-600" />
+                      Trip Schedule, Duration & Party Size
+                    </h3>
+                    <div className="grid md:grid-cols-3 gap-6">
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">Start Date</label>
+                        <input
+                          type="date"
+                          className="w-full p-3.5 border border-gray-300 rounded-xl focus:ring-blue-500 focus:border-blue-500 font-bold text-gray-900"
+                          value={formData.startDate}
+                          onChange={e => setFormData({ ...formData, startDate: e.target.value })}
+                        />
+                        <span className="text-xs text-gray-500 mt-1 block">Synced with Sri Lankan Holiday Calendar</span>
+                      </div>
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-2">Duration (Days)</label>
                         <input 
@@ -985,28 +1105,28 @@ const Planner = () => {
                     <div className="space-y-3 text-sm">
                       <div className="flex justify-between py-1 border-b border-gray-100">
                         <span className="text-gray-600">
-                          Base Package ({formData.days} days × {formData.travelers} travelers × ${activePackage?.baseCharge || 85}):
+                          Base Package ({formData.days} days × {formData.travelers} travelers × {formatPrice(activePackage?.baseCharge || 85)}):
                         </span>
-                        <span className="font-bold text-gray-900">${currentCost.baseTotal}</span>
+                        <span className="font-bold text-gray-900">{formatPrice(currentCost.baseTotal)}</span>
                       </div>
 
                       {currentCost.guideCost > 0 && (
                         <div className="flex justify-between py-1 border-b border-gray-100 text-blue-700">
-                          <span>Tour Guide Add-on ({formData.days} days × $45):</span>
-                          <span className="font-bold">+${currentCost.guideCost}</span>
+                          <span>Tour Guide Add-on ({formData.days} days × {formatPrice(45)}):</span>
+                          <span className="font-bold">+{formatPrice(currentCost.guideCost)}</span>
                         </div>
                       )}
 
                       {currentCost.mealExtraCost > 0 && (
                         <div className="flex justify-between py-1 border-b border-gray-100 text-purple-700">
                           <span>Culinary Selection Premium ({customizations.selectedMealOption}):</span>
-                          <span className="font-bold">+${currentCost.mealExtraCost}</span>
+                          <span className="font-bold">+{formatPrice(currentCost.mealExtraCost)}</span>
                         </div>
                       )}
 
                       <div className="flex justify-between pt-3 text-lg font-extrabold text-gray-900">
                         <span>Total Estimated Cost:</span>
-                        <span className="text-2xl text-green-600 font-extrabold">${currentCost.grandTotal}</span>
+                        <span className="text-2xl text-green-600 font-extrabold">{formatPrice(currentCost.grandTotal)}</span>
                       </div>
                     </div>
                   </div>
@@ -1079,8 +1199,8 @@ const Planner = () => {
 
                 <div className="bg-white/10 backdrop-blur-md p-5 rounded-2xl border border-white/20 text-center md:text-right min-w-[200px]">
                   <span className="text-xs uppercase tracking-wider text-blue-200 font-semibold block">Total Estimated Cost</span>
-                  <div className="text-4xl font-extrabold text-green-400 my-1">
-                    ${results.estimatedCost}
+                  <div className="text-3xl md:text-4xl font-extrabold text-green-400 my-1">
+                    {formatPrice(results.estimatedCost)}
                   </div>
                   <span className="text-xs text-blue-200 block">All taxes & fees included</span>
                 </div>
@@ -1374,6 +1494,80 @@ const Planner = () => {
 
               </div>
               
+              {/* MODULE 1 & 6: SMART DAY-BY-DAY SCHEDULE & HOLIDAY CALENDAR */}
+              {results.dailySchedule && results.dailySchedule.length > 0 && (
+                <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm space-y-5">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-gray-100 pb-4">
+                    <div>
+                      <span className="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
+                        Module 1 & 6 • Smart Scheduling & Calendar
+                      </span>
+                      <h3 className="text-xl font-bold text-gray-900 mt-1.5 flex items-center gap-2">
+                        <Calendar size={20} className="text-blue-600" />
+                        Day-by-Day Travel Schedule & Sri Lankan Holiday Calendar
+                      </h3>
+                    </div>
+                    <span className="text-xs font-bold text-gray-600 bg-gray-100 px-3 py-1.5 rounded-xl">
+                      {results.startDate} &rarr; {results.endDate}
+                    </span>
+                  </div>
+
+                  <div className="space-y-4">
+                    {results.dailySchedule.map((item) => (
+                      <div
+                        key={item.day}
+                        className="p-4 rounded-2xl border border-gray-200 hover:border-blue-300 bg-gray-50/60 transition flex flex-col md:flex-row justify-between gap-4"
+                      >
+                        <div className="flex items-start gap-4">
+                          <div className="w-16 h-16 rounded-2xl bg-blue-900 text-white flex flex-col items-center justify-center flex-shrink-0 shadow-xs">
+                            <span className="text-[10px] uppercase tracking-wider text-blue-200 font-bold">
+                              Day
+                            </span>
+                            <span className="text-2xl font-extrabold leading-none">{item.day}</span>
+                          </div>
+
+                          <div className="space-y-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-xs font-bold text-blue-800 bg-blue-100 px-2.5 py-0.5 rounded-md">
+                                {item.formattedDate}
+                              </span>
+                              {item.holiday && (
+                                <span className="text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                                  <Sparkles size={12} className="text-amber-600" />
+                                  Sri Lanka Holiday: {item.holiday.name} ({item.holiday.type})
+                                </span>
+                              )}
+                            </div>
+
+                            <h4 className="text-lg font-extrabold text-gray-900">
+                              {item.destination.name}{' '}
+                              <span className="text-xs font-semibold text-gray-500">
+                                ({item.destination.district} District)
+                              </span>
+                            </h4>
+
+                            <p className="text-xs text-gray-600 line-clamp-2">
+                              {item.destination.description}
+                            </p>
+
+                            <div className="flex flex-wrap gap-3 pt-1 text-xs text-gray-600">
+                              <span className="inline-flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-gray-200 font-medium">
+                                <Clock size={12} className="text-blue-600" /> Morning Exploration:{' '}
+                                {item.morningSlot}
+                              </span>
+                              <span className="inline-flex items-center gap-1 bg-white px-2.5 py-1 rounded-lg border border-gray-200 font-medium">
+                                <Compass size={12} className="text-emerald-600" /> Afternoon Sightseeing:{' '}
+                                {item.afternoonSlot}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Daily Destination Itinerary Cards */}
               <div className="space-y-4">
                 <h3 className="text-xl font-bold text-gray-900 border-b pb-2">Destinations on Your Schedule</h3>
@@ -1392,6 +1586,29 @@ const Planner = () => {
                   </div>
                 )}
               </div>
+
+              {planSavedSuccess && (
+                <div className="p-5 bg-green-50 border border-green-200 rounded-2xl flex flex-col sm:flex-row justify-between items-center gap-4">
+                  <div className="flex items-center gap-3 text-green-900">
+                    <CheckCircle2 size={24} className="text-green-600 flex-shrink-0" />
+                    <div>
+                      <h4 className="font-bold text-sm">
+                        Itinerary & Package Booking Saved to Your Profile!
+                      </h4>
+                      <p className="text-xs text-green-700 mt-0.5">
+                        Your {formData.days}-day tour plan and confirmed booking have been stored in the database.
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/dashboard')}
+                    className="bg-green-600 hover:bg-green-700 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition whitespace-nowrap"
+                  >
+                    Open My Dashboard &rarr;
+                  </button>
+                </div>
+              )}
               
               {/* Footer Actions */}
               <div className="pt-6 border-t border-gray-200 flex flex-wrap gap-4 justify-between items-center">
@@ -1403,10 +1620,24 @@ const Planner = () => {
                 </button>
 
                 <button 
-                  onClick={() => alert(`Your trip plan with the ${results.packageSnapshot?.packageName} Package has been registered! Check your Dashboard for details.`)}
-                  className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg transition text-sm"
+                  onClick={handleSavePlanAndBook}
+                  disabled={savingPlan || planSavedSuccess}
+                  className={`px-8 py-3 font-bold rounded-xl shadow-lg transition text-sm flex items-center gap-2 ${
+                    planSavedSuccess
+                      ? 'bg-green-600 text-white'
+                      : 'bg-blue-600 hover:bg-blue-700 text-white'
+                  }`}
                 >
-                  Save Itinerary to Profile
+                  {planSavedSuccess ? (
+                    <>
+                      <Check size={16} /> Saved to Dashboard
+                    </>
+                  ) : (
+                    <>
+                      <Save size={16} />
+                      {savingPlan ? 'Saving Itinerary...' : 'Save Itinerary & Confirm Trip'}
+                    </>
+                  )}
                 </button>
               </div>
 

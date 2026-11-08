@@ -3,16 +3,16 @@ import { Flag, X, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import api from '../services/api';
 
 const REPORT_REASONS = [
-  { value: 'inappropriate', label: 'Inappropriate Language or Content' },
-  { value: 'abusive', label: 'Abusive or Harassment' },
-  { value: 'spam', label: 'Spam or Fake Advertisement' },
-  { value: 'irrelevant', label: 'Off-topic / Irrelevant to Service' },
+  { value: 'spam', label: 'Spam or Promotional Content' },
+  { value: 'offensive', label: 'Offensive or Abusive Content' },
+  { value: 'fake', label: 'Fake or Misleading Review' },
+  { value: 'irrelevant', label: 'Irrelevant Content' },
   { value: 'other', label: 'Other Policy Violation' }
 ];
 
 const ReviewReportButton = ({ reviewId, onReported }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [reason, setReason] = useState('inappropriate');
+  const [reason, setReason] = useState('spam');
   const [details, setDetails] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -65,7 +65,7 @@ const ReviewReportButton = ({ reviewId, onReported }) => {
             <div className="flex justify-between items-center pb-3 border-b border-gray-100">
               <div className="flex items-center gap-2 text-red-700 font-bold">
                 <AlertTriangle size={18} />
-                <h4>Report Review</h4>
+                <h4>Report Inappropriate Review</h4>
               </div>
               <button
                 type="button"
@@ -102,7 +102,7 @@ const ReviewReportButton = ({ reviewId, onReported }) => {
 
               <div>
                 <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                  Additional Details (Optional)
+                  Additional Explanation (Optional)
                 </label>
                 <textarea
                   rows={3}
@@ -139,4 +139,3 @@ const ReviewReportButton = ({ reviewId, onReported }) => {
 };
 
 export default ReviewReportButton;
-

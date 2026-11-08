@@ -9,7 +9,7 @@ const UserSchema = new mongoose.Schema({
   googleId: { type: String },
   profileImage: { type: String },
   authProvider: { type: String, default: 'local' },
-  role: { type: String, enum: ['tourist', 'guide', 'hotel_owner', 'admin'], default: 'tourist' },
+  role: { type: String, enum: ['tourist', 'user', 'guide', 'hotel_owner', 'admin'], default: 'tourist' },
   createdAt: { type: Date, default: Date.now }
 });
 

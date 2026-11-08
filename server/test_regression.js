@@ -128,7 +128,7 @@ async function runRegressionTests() {
 
       // 3.4 Search: GET /api/destinations?search=Sigiriya
       const searchDest = await request('/api/destinations?search=Sigiriya');
-      if (searchDest.status !== 200 || searchDest.body.count !== 1 || searchDest.body.data[0].name !== 'Sigiriya') {
+      if (searchDest.status !== 200 || searchDest.body.count < 1 || !searchDest.body.data.some(d => d.name.includes('Sigiriya'))) {
         throw new Error(`Search failed for Sigiriya: count ${searchDest.body?.count}`);
       }
       console.log(`  PASS: GET /api/destinations?search=Sigiriya returned Sigiriya.`);

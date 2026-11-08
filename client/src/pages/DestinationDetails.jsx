@@ -3,9 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { 
   MapPin, Star, Calendar, ArrowLeft, Navigation, Plus, Eye, 
-  Compass, Clock, DollarSign, Tag, ShieldCheck, Share2 
+  Compass, Clock, DollarSign, Tag, ShieldCheck, Share2, MessageSquare 
 } from 'lucide-react';
 import MapView from '../components/MapView';
+import ReviewList from '../components/ReviewList';
 
 /**
  * Dream Ceylon Tourism Management System
@@ -31,18 +32,19 @@ const DestinationDetails = () => {
   const [error, setError] = useState('');
   const [imgError, setImgError] = useState(false);
 
+  const fetchDestination = async (silent = false) => {
+    try {
+      if (!silent) setLoading(true);
+      const res = await api.get(`/destinations/${id}`);
+      setDestination(res.data?.data || res.data);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to fetch destination details');
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchDestination = async () => {
-      try {
-        setLoading(true);
-        const res = await api.get(`/destinations/${id}`);
-        setDestination(res.data?.data || res.data);
-      } catch (err) {
-        setError(err.response?.data?.error || 'Failed to fetch destination details');
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchDestination();
   }, [id]);
 
@@ -142,11 +144,12 @@ const DestinationDetails = () => {
             
             {/* Quick Status Tags */}
             <div className="flex flex-wrap gap-2.5 items-center">
-              {destination.rating && (
-                <span className="flex items-center text-xs font-extrabold text-amber-800 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-200 shadow-sm">
-                  <Star size={14} className="mr-1.5 fill-amber-500 text-amber-500" /> {destination.rating.toFixed(1)} / 5.0 Rating
-                </span>
-              )}
+              <span className="flex items-center text-xs font-extrabold text-amber-800 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-200 shadow-sm">
+                <Star size={14} className="mr-1.5 fill-amber-500 text-amber-500" />
+                {destination.rating > 0
+                  ? `${Number(destination.rating).toFixed(1)} / 5.0 (${destination.reviewCount || 0} ${destination.reviewCount === 1 ? 'Review' : 'Reviews'})`
+                  : 'No ratings yet'}
+              </span>
               <span className="flex items-center text-xs font-bold text-blue-800 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-200">
                 <MapPin size={14} className="mr-1.5 text-blue-600" /> {destination.district} District
               </span>
@@ -199,6 +202,13 @@ const DestinationDetails = () => {
                 className="flex items-center bg-green-600 hover:bg-green-700 text-white font-bold text-xs md:text-sm px-6 py-3 rounded-xl shadow transition-colors"
               >
                 <Plus size={17} className="mr-2" /> Plan a Tour with this Destination
+              </button>
+
+              <button 
+                onClick={() => document.getElementById('reviews-section')?.scrollIntoView({ behavior: 'smooth' })}
+                className="flex items-center bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs md:text-sm px-6 py-3 rounded-xl shadow transition-colors"
+              >
+                <MessageSquare size={17} className="mr-2" /> Reviews & Ratings ({destination.reviewCount || 0})
               </button>
             </div>
           </div>
@@ -274,6 +284,28 @@ const DestinationDetails = () => {
                 description: destination.description
               }]} 
               height="480px"
+            />
+          </div>
+        </div>
+
+        {/* Tourist Reviews & Ratings Section (Module 5) */}
+        <div id="reviews-section" className="border-t border-gray-100 p-6 md:p-10 bg-white">
+          <div className="max-w-4xl mx-auto">
+            <div className="mb-6">
+              <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                <MessageSquare className="text-blue-600" size={24} />
+                Tourist Reviews & Ratings for {destination.name}
+              </h3>
+              <p className="text-gray-500 text-xs md:text-sm mt-1">
+                Verified traveler feedback, star rating breakdown, and community experiences at {destination.name}.
+              </p>
+            </div>
+
+            <ReviewList
+              targetType="destination"
+              targetId={destination._id}
+              targetName={destination.name}
+              onRatingUpdated={() => fetchDestination(true)}
             />
           </div>
         </div>
