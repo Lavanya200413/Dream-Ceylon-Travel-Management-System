@@ -280,11 +280,16 @@ const Home = () => {
                   <div className="h-48 relative overflow-hidden bg-gray-200">
                     <img
                       src={
+                        dest.image ||
                         dest.imageUrl ||
                         dest.images?.[0] ||
                         'https://images.unsplash.com/photo-1586861635167-e5223aadc9fe?w=800&auto=format&fit=crop&q=80'
                       }
                       alt={dest.name}
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = 'https://images.unsplash.com/photo-1586861635167-e5223aadc9fe?w=800&auto=format&fit=crop&q=80';
+                      }}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20" />

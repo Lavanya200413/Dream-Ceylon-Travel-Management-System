@@ -14,9 +14,6 @@ const {
 // Load env vars
 dotenv.config();
 
-// Connect to database
-connectDB();
-
 const app = express();
 
 // Middleware
@@ -58,8 +55,58 @@ app.put('/api/reports/:id/status', protect, authorize('admin'), updateReportStat
 
 const PORT = process.env.PORT || 5000;
 
+let server;
+
+const startServer = async () => {
+  try {
+    // 1. Ensure database connects before listening
+    await connectDB();
+
+    // 2. Start Express server with verified callback
+    server = app.listen(PORT, () => {
+      console.log(`\n====================================================`);
+      console.log(`🚀 Dream Ceylon Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+      console.log(`📡 Base API URL: http://localhost:${PORT}/api`);
+      console.log(`====================================================\n`);
+    });
+
+    // 3. Catch socket errors like EADDRINUSE explicitly
+    server.on('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        console.error(`\n❌ [PORT CONFLICT ERROR]`);
+        console.error(`Port ${PORT} is already in use by another process.`);
+        console.error(`On Windows PowerShell, check or terminate the process using port ${PORT}:`);
+        console.error(`  netstat -ano | Select-String ":${PORT} "`);
+        console.error(`  Stop-Process -Id <PID> -Force\n`);
+      } else {
+        console.error('❌ Server startup error:', err);
+      }
+      process.exit(1);
+    });
+
+  } catch (error) {
+    console.error(`❌ Failed to initialize database: ${error.message}`);
+    process.exit(1);
+  }
+};
+
+// Graceful termination for nodemon restarts and process signals
+const gracefulShutdown = (signal) => {
+  if (server) {
+    server.close(() => {
+      console.log(`\n🛑 [${signal}] HTTP server closed cleanly.`);
+      process.exit(0);
+    });
+  } else {
+    process.exit(0);
+  }
+};
+
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+
 if (require.main === module) {
-  app.listen(PORT, console.log(`Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`));
+  startServer();
 }
 
 module.exports = app;

@@ -73,7 +73,7 @@ const DestinationDetails = () => {
     );
   }
 
-  const imageUrl = destination.image || destination.imageUrl;
+  const imageUrl = destination.image || destination.imageUrl || destination.images?.[0];
   const primaryCategory = Array.isArray(destination.category)
     ? destination.category[0]
     : destination.category;
